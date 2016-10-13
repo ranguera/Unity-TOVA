@@ -8,7 +8,6 @@ public class TTova : MonoBehaviour {
     public float maxISI = 1.5f;
     public float presentationTime = .1f;
     public float responseTime = 1f;
-    public bool impulsivity;
     public int num_go;
     public int num_nogo;
     public Renderer topTarget;
@@ -35,7 +34,7 @@ public class TTova : MonoBehaviour {
     {
         targets = new int[num_go + num_nogo];
 
-        // create the half and half tova + impulsivity mode
+        // create the target arrays to randomize
         for (int i = 0; i < num_go; i++)
         {
             targets[i] = 1;
@@ -175,7 +174,7 @@ public class TTova : MonoBehaviour {
 
     private void EndAndSave()
     {
-        localSave.SaveLocalData(impulsivity);
+        localSave.SaveLocalData((num_go>num_nogo));
         lslSender.SendLevelEnd();
         state = 7;
     }
