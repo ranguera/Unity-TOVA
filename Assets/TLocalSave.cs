@@ -25,10 +25,10 @@ public class TLocalSave {
             (success ? "true" : "false") + System.Environment.NewLine;
     }
 
-    public void SaveLocalData(bool impulsivity)
+    public void SaveLocalData()
     {
         DateTime d = System.DateTime.Now;
-        string filename = Path.Combine(Application.dataPath, "[TOVA " + (impulsivity ? "impulsivity" : "") + "]-" + d.Year + "-" + d.Month + "-" + d.Day + "--" + d.Hour + "-" + d.Minute + "-" + d.Second + ".csv");
+        string filename = Path.Combine(Application.dataPath, "[TOVA]-" + d.Year + "-" + d.Month + "-" + d.Day + "--" + d.Hour + "-" + d.Minute + "-" + d.Second + ".csv");
         File.WriteAllText(filename, m_dataToSave);
         Finished = true;
     }

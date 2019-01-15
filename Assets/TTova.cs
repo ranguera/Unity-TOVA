@@ -10,6 +10,7 @@ public class TTova : MonoBehaviour {
     public float responseTime = 1f;
     public int num_go;
     public int num_nogo;
+    public int num_rounds_per_condition = 2;
     public Renderer topTarget;
     public Renderer bottomTarget;
     public Image topMarker, bottomMarker;
@@ -25,9 +26,11 @@ public class TTova : MonoBehaviour {
     private string path;
     private string id;
     private bool success;
+    private int round_index;
+    private int round_counter;
 
     private TLocalSave localSave;
-    private LSLSender lslSender;
+    //private LSLSender lslSender;
 
 	// Use this for initialization
 	void Start ()
@@ -47,11 +50,13 @@ public class TTova : MonoBehaviour {
         ShuffleArray(ref targets);
 
         localSave = new TLocalSave();
-        lslSender = GameObject.Find("LSLSender").GetComponent<LSLSender>();
+        //lslSender = GameObject.Find("LSLSender").GetComponent<LSLSender>();
 
-        lslSender.SendLevelStart();
+        //lslSender.SendLevelStart();
         
         globalIndex = 0;
+        round_counter = 0;
+        round_index = 0;
         state = 1;
         isi = Random.Range(minIsi, maxISI);
 
@@ -94,9 +99,17 @@ public class TTova : MonoBehaviour {
                 EndAndSave();
                 break;
 
-            // Save data
             case 7:
-                End();
+                StartCoroutine(SameConditionBreak());
+                break;
+
+            case 8:
+                StartCoroutine(DifferentConditionBreak());
+                break;
+
+            // Save data
+            case 9:
+                StartCoroutine(End());
                 break;
 
             default:
@@ -117,19 +130,19 @@ public class TTova : MonoBehaviour {
         if (targets[globalIndex] == 1)
         {
             topTarget.enabled = true;
-            topMarker.color = Color.white;
-            lslSender.SendLSL(1);
+            //topMarker.color = Color.white;
+            //lslSender.SendLSL(1);
         }
         else
         {
             bottomTarget.enabled = true;
-            bottomMarker.color = Color.white;
-            lslSender.SendLSL(2);
+            //bottomMarker.color = Color.white;
+            //lslSender.SendLSL(2);
         }
         responseSpeed = Time.time;
         yield return new WaitForSeconds(presentationTime);
         topTarget.enabled = bottomTarget.enabled = false;
-        topMarker.color = bottomMarker.color = Color.black;
+        //topMarker.color = bottomMarker.color = Color.black;
         state = 3;
     }
 
@@ -149,7 +162,7 @@ public class TTova : MonoBehaviour {
         if( Input.GetKeyDown(KeyCode.Space) )
         {
             responseSpeed = Time.time - responseSpeed;
-            lslSender.SendLSLUserAction();
+            //lslSender.SendLSLUserAction();
             responseTriggered = true;
             if (targets[globalIndex] == 1)
                 success = true;
@@ -174,13 +187,81 @@ public class TTova : MonoBehaviour {
 
     private void EndAndSave()
     {
-        localSave.SaveLocalData((num_go>num_nogo));
-        lslSender.SendLevelEnd();
-        state = 7;
+        localSave.SaveLocalData();
+        //lslSender.SendLevelEnd();
+        round_counter++;
+        round_index++;
+
+        if ( round_counter >= num_rounds_per_condition)
+        {
+            if( round_index >= num_rounds_per_condition*2)
+            {
+                state = 9;
+            }
+            else
+            {
+                round_counter = 0;
+                state = 8;
+            }
+        }
+        else
+        {
+            state = 7;
+        }
+            
     }
 
-    private void End()
+    private IEnumerator SameConditionBreak()
     {
+        this.fixationCross.text = "Press ENTER to start the next round";
+        globalIndex = 0;
+        ShuffleArray(ref targets);
+
+        while (!Input.GetKey(KeyCode.Return))
+        {
+            yield return null;
+        }
+        this.fixationCross.text = "X";
+        this.state = 1;
+    }
+    
+    private IEnumerator DifferentConditionBreak()
+    {
+        this.fixationCross.text = "These are the instructions\n" +
+            "with as many lines as we need\n" + 
+            "Separated by backslash-n";
+
+        globalIndex = 0;
+        targets = new int[num_go + num_nogo];
+
+        // create the target arrays to randomize
+        for (int i = 0; i < num_go; i++)
+        {
+            targets[i] = 2;
+        }
+        for (int i = num_go; i < num_go + num_nogo; i++)
+        {
+            targets[i] = 1;
+        }
+
+        ShuffleArray(ref targets);
+
+        while (!Input.GetKey(KeyCode.Return))
+        {
+            yield return null;
+        }
+
+        this.fixationCross.text = "X";
+        this.state = 1;
+    }
+    
+    private IEnumerator End()
+    {
+        this.fixationCross.text = "Thanks for participating.\nPress ENTER exit application";
+
+        while (!Input.GetKey(KeyCode.Return))
+            yield return null;
+
         Application.Quit();
     }
 
